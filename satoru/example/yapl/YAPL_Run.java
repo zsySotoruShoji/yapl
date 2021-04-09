@@ -1,5 +1,6 @@
 package satoru.example.yapl;
 
+import satoru.ordovices.parse.ASTNode;
 import satoru.ordovices.parse.TokenList;
 import satoru.ordovices.tokenizer.Tokenizer;
 
@@ -14,7 +15,7 @@ public class YAPL_Run {
 
     public static void main(String[] args) {
 
-        String[] k = {"(", ")", "[", "]", "\\", "->", ":", "="};
+        String[] k = {"(", ")", "[", "]", "\\", "->", ":", "=", "?"};
         String[] s = {" "};
         Tokenizer tokenizer = new Tokenizer(k, s);
 
@@ -35,26 +36,44 @@ public class YAPL_Run {
                 (a, b) -> new YAPL_Int(b.val() - a.val()),
                 3
         );
+        var div
+                = YAPL_Function.intInfixBiFunction(
+                (a, b) -> new YAPL_Int(a.val() / b.val()),
+                2
+        );
 
         var eval = new YAPL_Eval();
         eval.binds.put("+", add);
         eval.binds.put("*", mul);
         eval.binds.put("-", sub);
+        eval.binds.put("/", div);
         eval.binds.put(".", dot);
         eval.binds.put("or", or);
         eval.binds.put("len", len);
+        eval.binds.put("prefix", prefix);
+        eval.binds.put("postfix", postfix);
 
         while (true){
+            sleep(510);
             System.out.print('>');
-            TokenList tl = tokenizer.exec(sc.nextLine());
-            var ast = YAPL_Parse.orAssign.parse(tl);
+            TokenList tl;
+            ASTNode ast;
+            try{
+                tl = tokenizer.exec(sc.nextLine());
+                ast = YAPL_Parse.orAssign.parse(tl);
+            }catch (NumberFormatException e){
+                System.err.println("Syntax error" + System.lineSeparator()
+                + "whitespace is needed between operators");
+                continue;
+            }
 
             try{
                 var ans = eval.eval(ast);
                 System.out.println(ans);
-            }catch (IllegalArgumentException
-                    | ClassCastException e){
-                System.err.println("Syntax error");
+            }catch (ClassCastException e){
+                System.err.println("Type error");
+            }catch (IllegalArgumentException e){
+                System.err.println(e.getMessage());
             }
         }
 
@@ -108,5 +127,35 @@ public class YAPL_Run {
             ),
             new YAPL_FunctionType(PREFIX, 1, LEFT)
     );
+
+    static final YAPL_Function prefix = new YAPL_Function(
+        right -> new YAPL_Function(
+            left -> new YAPL_Function(
+                ((YAPL_Function) left)::apply,
+                new YAPL_FunctionType(PREFIX, ((YAPL_Int) right).val(), LEFT)
+            ),
+            new YAPL_FunctionType(SUFFIX, 0, LEFT)
+        ),
+        new YAPL_FunctionType(PREFIX, 0, LEFT)
+    );
+
+    static final YAPL_Function postfix = new YAPL_Function(
+        right -> new YAPL_Function(
+            left -> new YAPL_Function(
+                ((YAPL_Function) left)::apply,
+                new YAPL_FunctionType(SUFFIX, ((YAPL_Int) right).val(), LEFT)
+            ),
+            new YAPL_FunctionType(SUFFIX, 0, LEFT)
+        ),
+        new YAPL_FunctionType(PREFIX, 0, LEFT)
+    );
+
+    static void sleep(int millis){
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException interruptedException) {
+            interruptedException.printStackTrace();
+        }
+    }
 
 }

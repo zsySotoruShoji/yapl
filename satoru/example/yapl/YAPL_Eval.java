@@ -74,13 +74,22 @@ public class YAPL_Eval {
             binds.put(ast.child(0).self().str(), e);
             return e;
         }
+        if(tag == IF){
+            var cond = eval(ast.child(0).child(0));
+            if(cond == YAPL_SpecialValue.NOTHING){
+                return eval(ast.child(2).child(0));
+            }
+            if(((YAPL_Int) cond).val().equals(0)){
+                return eval(ast.child(2).child(0));
+            }
+            return eval(ast.child(1).child(0));
+        }
 
         if(ast.self().tag() != EXPR){
             throw new IllegalArgumentException();
         }
         List<YAPL_Object> list = new ArrayList<>();
         ast.children().forEach(node -> list.add(eval(node)));
-        //System.out.println(list);
 
         if(list.size() == 1){
             return list.get(0);
@@ -91,7 +100,12 @@ public class YAPL_Eval {
                 .map(fun -> ((YAPL_FunctionType) fun.type()).priority.priority)
                 .max(Integer::compare).orElse(0);
 
-        for(int j=0; j < maxPriority + 1; j++)
+        int minPriority
+                = list.stream().filter(obj -> obj instanceof YAPL_Function)
+                .map(fun -> ((YAPL_FunctionType) fun.type()).priority.priority)
+                .min(Integer::compare).orElse(0);
+
+        for(int j=minPriority; j <= maxPriority; j++)
         for(int i=0; i < list.size(); i++){
 
             var elem = list.get(i);
@@ -137,12 +151,12 @@ public class YAPL_Eval {
     }
 
     static void t2(){
-        String[] k = {"(", ")", "[", "]", "\\", "->", ":", "="};
+        String[] k = {"(", ")", "[", "]", "\\", "->", ":", "=", "?"};
         String[] s = {" "};
         Tokenizer tokenizer = new Tokenizer(k, s);
 
         TokenList tl = tokenizer.exec(
-                "[1 2 3]"
+                "0 ? 1 : a"
         );
         System.out.println(tl);
         var ast = YAPL_Parse.expr().parse(tl);
@@ -169,15 +183,14 @@ public class YAPL_Eval {
         eval.binds.put("+", add);
         eval.binds.put("*", mul);
         eval.binds.put("-", sub);
-        eval.binds.put(".", dot());
+        eval.binds.put(".", dot);
 
         var ans = eval.eval(ast);
         System.out.println(ans);
     }
 
-    static YAPL_Function dot(){
-
-        return new YAPL_Function(
+    static YAPL_Function dot
+        = new YAPL_Function(
             a1 -> new YAPL_Function(
                 a2 -> {
                     if(a1 instanceof YAPL_Array){
@@ -191,7 +204,6 @@ public class YAPL_Eval {
                             new YAPL_FunctionType(PREFIX, 1, LEFT)
                         );
                     }
-
                     return new YAPL_Function(
                         a3 -> {
                             var tmp
@@ -205,5 +217,6 @@ public class YAPL_Eval {
             ),
             new YAPL_FunctionType(PREFIX, 0, LEFT)
         );
-    }
+
+
 }

@@ -10,6 +10,11 @@ public enum YAPL_Enum implements ITag {
     ARRAY_SIZE,
     ARRAY_LITR,
     ASSIGN,
+    IF,
+    CONDITION,
+    THEN,
+    ELSE,
 
+    ;
 
 }
