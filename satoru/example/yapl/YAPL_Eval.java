@@ -4,7 +4,6 @@ import satoru.ordovices.parse.ASTNode;
 import satoru.ordovices.parse.ITag;
 import satoru.ordovices.parse.TokenList;
 import satoru.ordovices.tokenizer.Tokenizer;
-import satoru.util.MutableWrapper;
 
 import java.util.*;
 
@@ -31,6 +30,8 @@ public class YAPL_Eval {
     }
 
     public YAPL_Object eval(ASTNode ast){
+        //if(ast.children().size() != 0)
+        //System.out.println(ast);
 
         ITag tag = ast.self().tag();
         if(tag == INT_LITERAL){
@@ -56,18 +57,29 @@ public class YAPL_Eval {
             );
         }
         if(tag == ARRAY){
-            if(ast.child(0).self().tag() == ARRAY_LITR){
-                return new YAPL_Array(
-                    a -> eval(ast.child(0).children().get(((YAPL_Int) a).val())),
-                    ast.child(0).children().size(),
-                    new YAPL_FunctionType(PREFIX, 1, LEFT)
-                );
-            }
+            if(ast.child(0).self().tag() == ARRAY_LITR)
+            return new YAPL_Array(
+                a -> eval(ast.child(0).children().get(((YAPL_Int) a).val())),
+                ast.child(0).children().size(),
+                new YAPL_FunctionType(PREFIX, 1, LEFT)
+            );
+
+            else if(ast.child(0).self().tag() == LAMBDA)
             return new YAPL_Array(
                 ((YAPL_Function) eval(ast.child(0))).val,
                 ((YAPL_Int) eval(ast.child(1).child(0))).val(),
                 new YAPL_FunctionType(PREFIX, 1, LEFT)
             );
+
+            else if (ast.child(0).self().tag() == EXPR){
+                return new YAPL_Array(
+                    ((YAPL_Function) eval(ast.child(0).child(0))).val,
+                    ((YAPL_Int) eval(ast.child(1).child(0))).val(),
+                    new YAPL_FunctionType(PREFIX, 1, LEFT)
+                );
+            }
+
+            else throw new IllegalArgumentException();
         }
         if(tag == ASSIGN){
             var e = eval(ast.child(1));
@@ -100,12 +112,8 @@ public class YAPL_Eval {
                 .map(fun -> ((YAPL_FunctionType) fun.type()).priority.priority)
                 .max(Integer::compare).orElse(0);
 
-        int minPriority
-                = list.stream().filter(obj -> obj instanceof YAPL_Function)
-                .map(fun -> ((YAPL_FunctionType) fun.type()).priority.priority)
-                .min(Integer::compare).orElse(0);
 
-        for(int j=minPriority; j <= maxPriority; j++)
+        for(int j=-1; j <= maxPriority; j++)
         for(int i=0; i < list.size(); i++){
 
             var elem = list.get(i);
@@ -119,21 +127,23 @@ public class YAPL_Eval {
                     if(i + 1 >= list.size()){
                         continue;
                     }
-                    var ret =
-                            ((YAPL_Function)elem).apply(list.get(i + 1));
-                    list.set(i, ret);
-                    list.remove(i + 1);
-                    i--;
+                    try{
+                        var ret = ((YAPL_Function)elem).apply(list.get(i + 1));
+                        list.set(i, ret);
+                        list.remove(i + 1);
+                        i = -1;
+                    }catch (ClassCastException e){}
                 }
                 else if(notion == SUFFIX){
-                    if(i - 1 < 0){
+                    if(i == 0){
                         continue;
                     }
-                    var ret =
-                            ((YAPL_Function)elem).apply(list.get(i - 1));
-                    list.set(i, ret);
-                    list.remove(i - 1);
-                    i--;
+                    try{
+                        var ret = ((YAPL_Function)elem).apply(list.get(i - 1));
+                        list.set(i, ret);
+                        list.remove(i - 1);
+                        i = -1;
+                    }catch (ClassCastException e){}
                 }
                 else throw new IllegalArgumentException();
             }
@@ -156,7 +166,7 @@ public class YAPL_Eval {
         Tokenizer tokenizer = new Tokenizer(k, s);
 
         TokenList tl = tokenizer.exec(
-                "0 ? 1 : a"
+                ""
         );
         System.out.println(tl);
         var ast = YAPL_Parse.expr().parse(tl);

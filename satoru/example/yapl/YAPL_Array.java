@@ -31,7 +31,7 @@ public class YAPL_Array extends YAPL_Function{
 
     @Override
     public String toString(){
-        if(length == 0){
+        if(length <= 0){
             return "[]";
         }
         var ans = new StringBuilder();

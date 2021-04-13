@@ -1,0 +1,36 @@
+-1 = 0 - 1
+infix = (\num->(\fun->(\right->(\left->(fun prefix 1 left) prefix 1 right) postfix num) prefix num) postfix -1) prefix -1
+== = (\right->(\left->(right - left) ? 0 : 1)) infix 5
+not = (\x->x?0:1)
+!= = (\right->(\left-> not (right == left))) infix 5
+head = (\arr->arr 0)
+tail = (\arr -> arr . [\idx->idx + 1: len arr - 1])
+init = (\arr -> arr . (iota (len arr - 1)) )
+last = (\arr -> arr (len arr - 1) )
+reduce = (\fun->(\arr->(\acc-> len arr ? (fun prefix2 1) (head arr) (reduce (fun prefix2 1) (tail arr) acc) : acc)))
+prefix2 = (\fun->(\num->(\a1->(\a2-> (fun prefix 1 a1) prefix 1 a2 )))) infix -1
+sum = (\arr->reduce + arr 0)
+id = (\x->x)
+iota = (\num -> [id: num])
+const = (\val->(\arg->val))
+isPositive = (\num -> [\idx -> 1: num] 0 or 0)
+> = (\a1->(\a2->isPositive (a1 - a2))) infix 5
+< = (\a1->(\a2->isPositive (a2 - a1))) infix 5
+<= = (\a1->(\a2 -> not (a1 > a2))) infix 5
+|| = (\x->(\y->x ? 1 : y ? 1 : 0)) infix 4
+&& = (\x->(\y->x ? y ? 1 : 0 : 0)) infix 4
+>= = (\x->(\y-> (x > y) || (x == y))) infix 5
+++ = (\a1->(\a2->[\idx->a1 idx or a2 (idx - len a1): len a1 + len a2])) infix 0
+^ = (\n1->(\n2->n2 ? n1 * (n1 ^ (n2 - 1)) : 1)) infix 2
+! = (\num ->num ? num * (num - 1)! : 1) postfix 1
+rev = (\arr -> arr . [\i -> len arr - i - 1: len arr])
+nothing = [] 0
+max = (\arr -> len arr == 1 ? arr 0 : head arr > max . tail arr ? head arr : max . tail arr)
+tmp = (\h->(\r->h == 0 ? r : [h] ++ r))
+mapi = (\fun->(\arr->[\idx->(fun prefix2 1) idx (arr idx): len arr]))
+filter = (\cond->(\arr-> arr . (reduce tmp (mapi * (cond . arr)) []) ))
+|> = (\obj->(\fun-> fun prefix 1 obj)) infix 0
+_ = (\fun -> (swap fun) postfix 2) postfix 1
+~ = (\fun->(\obj->fun prefix 1 obj)) infix -1
+swap = (\fun->(\a1->(\a2->fun prefix2 1 a2 a1)))
+trans = (\arr -> [\y->[\x->arr x y: len arr]: len (arr 0)])

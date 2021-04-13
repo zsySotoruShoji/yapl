@@ -57,7 +57,7 @@ public class YAPL_Parse {
     }
 
     static Parser<ASTNode> arrayFunc(){
-        return t(lambda(), is(":"), expr()).apply((l,c,e) ->
+        return t(lambda().or(expr()), is(":"), expr()).apply((l,c,e) ->
                 new ASTNode(ARRAY.asToken(),
                 l,
                 new ASTNode(ARRAY_SIZE.asToken(), e)))
@@ -98,7 +98,7 @@ public class YAPL_Parse {
         String[] s = {" "};
         Tokenizer tokenizer = new Tokenizer(k, s);
 
-        TokenList tl = tokenizer.exec("0 ? 1 : 2");
+        TokenList tl = tokenizer.exec("reduce = (\\fun->(\\arr->(\\acc-> len arr ? (prefix2 fun) (head arr) (reduce (prefix2 fun) (tail arr) acc) : acc)))");
         System.out.println(tl);
         var ast = orAssign.parse(tl);
         System.out.println(ast);

@@ -39,6 +39,26 @@ public class YAPL_Function implements YAPL_Object{
         );
     }
 
+    public static <T extends YAPL_Object> YAPL_Function infixBiFunction(
+            BiFunction<? super YAPL_Object, ? super YAPL_Object, T> fun,
+            int priority){
+        return new YAPL_Function(
+                a1 -> new YAPL_Function(
+                        a2 -> (YAPL_Object) fun.apply(a1, a2).val(),
+                        new YAPL_FunctionType(
+                                SUFFIX,
+                                priority,
+                                LEFT
+                        )
+                ),
+                new YAPL_FunctionType(
+                        PREFIX,
+                        priority,
+                        LEFT
+                )
+        );
+    }
+
     YAPL_Object apply(YAPL_Object arg){
         return val.apply(arg);
     }
