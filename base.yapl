@@ -1,19 +1,19 @@
 -1 = 0 - 1
 infix = (\num->(\fun->(\right->(\left->(fun prefix 1 left) prefix 1 right) postfix num) prefix num) postfix -1) prefix -1
-== = (\right->(\left->(right - left) ? 0 : 1)) infix 5
+== = (\right->(\left->right - left ? 0 : 1)) infix 5
 not = (\x->x?0:1)
-!= = (\right->(\left-> not (right == left))) infix 5
+!= = (\right->(\left-> not (right == left) )) infix 5
 head = (\arr->arr 0)
 tail = (\arr -> arr . [\idx->idx + 1: len arr - 1])
 init = (\arr -> arr . (iota (len arr - 1)) )
 last = (\arr -> arr (len arr - 1) )
-reduce = (\fun->(\arr->(\acc-> len arr ? (fun prefix2 1) (head arr) (reduce (fun prefix2 1) (tail arr) acc) : acc)))
+reduce = (\fun->(\acc->(\arr-> len arr ? (fun prefix2 1) (last arr) (reduce (fun prefix2 1) acc (init arr)) : acc)))
 prefix2 = (\fun->(\num->(\a1->(\a2-> (fun prefix 1 a1) prefix 1 a2 )))) infix -1
-sum = (\arr->reduce + arr 0)
+sum = reduce + 0
 id = (\x->x)
 iota = (\num -> [id: num])
 const = (\val->(\arg->val))
-isPositive = (\num -> [\idx -> 1: num] 0 or 0)
+isPositive = (\num -> [(const 1): num] 0 or 0)
 > = (\a1->(\a2->isPositive (a1 - a2))) infix 5
 < = (\a1->(\a2->isPositive (a2 - a1))) infix 5
 <= = (\a1->(\a2 -> not (a1 > a2))) infix 5
@@ -28,9 +28,19 @@ nothing = [] 0
 max = (\arr -> len arr == 1 ? arr 0 : head arr > max . tail arr ? head arr : max . tail arr)
 tmp = (\h->(\r->h == 0 ? r : [h] ++ r))
 mapi = (\fun->(\arr->[\idx->(fun prefix2 1) idx (arr idx): len arr]))
-filter = (\cond->(\arr-> arr . (reduce tmp (mapi * (cond . arr)) []) ))
 |> = (\obj->(\fun-> fun prefix 1 obj)) infix 0
 _ = (\fun -> (swap fun) postfix 2) postfix 1
 ~ = (\fun->(\obj->fun prefix 1 obj)) infix -1
 swap = (\fun->(\a1->(\a2->fun prefix2 1 a2 a1)))
 trans = (\arr -> [\y->[\x->arr x y: len arr]: len (arr 0)])
+table = (\fun->(\arr1->(\arr2-> [\x->[\y-> (fun prefix2 1) arr1 ~ x  arr2 ~ y: len arr2]: len arr1] )))
+.2 = (\f1->(\f2-> (\a1->(\a2-> (f2 prefix2 1 a1 a2) |> f1 )) )) infix 0
+.3 = (\f1->(\f2-> (\a1->(\a2->(\a3-> (f2 prefix2 1 a1 a2 a3) |> f1 ))) )) infix 0
+filter = rev .2 (\cond->(\arr-> arr . (reduce tmp [] (mapi * (cond . arr))) ))
+sqrt = (- 1) . sum . (\x-> (< x + 1) . ((^ 2) . (iota 10)) )
+% = (\x->(\y->x - (x / y) * y)) infix 2
+odds = (\n->[\i->i * 2 + 1: n / 2])
+isPrime' = (\n -> (\i -> n % i) . (tail . odds . (+ 1) . sqrt n ) )
+isPrime = (\n-> n <= 1 ? 0 : n % 2 == 0 ? n == 2 ? 1 : 0 : reduce && 1 (isPrime' n) )
+primes = (\n -> filter isPrime (iota n))
+contains = (\ele->(\arr-> len arr ? head arr == ele ? 1 : contains ele (tail arr) : 0 ))
